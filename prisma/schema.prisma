@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id                   String   @id @default(uuid())
+  code                 String   @unique
+  hostId               String
+  status               String   @default("lobby")
+  currentQuestionIndex Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  players              Player[]
+  votes                Vote[]
+}
+
+model Player {
+  id               String  @id @default(uuid())
+  roomId           String
+  nickname         String
+  avatarConfig     Json
+  isHost           Boolean @default(false)
+  score            Int     @default(0)
+  connectionStatus String  @default("connected")
+  room             Room    @relation(fields: [roomId], references: [id])
+  votesGiven       Vote[]  @relation("VoterVotes")
+  votesReceived    Vote[]  @relation("TargetVotes")
+}
+
+model Question {
+  id       Int    @id @default(autoincrement())
+  text     String
+  category String @default("general")
+  votes    Vote[]
+}
+
+model Vote {
+  id             Int    @id @default(autoincrement())
+  roomId         String
+  voterId        String
+  targetId       String
+  questionId     Int
+  roundNumber    Int
+  room           Room     @relation(fields: [roomId], references: [id])
+  voter          Player   @relation("VoterVotes", fields: [voterId], references: [id])
+  target         Player   @relation("TargetVotes", fields: [targetId], references: [id])
+  question       Question @relation(fields: [questionId], references: [id])
+}
